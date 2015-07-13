@@ -33,10 +33,10 @@ if (!function_exists('gzdecode')) {
 */
 
 abstract class LmlSpiderBase extends LmlBase{
-	
+
 	/**
 	 * 根据链接获取完整URL
-	 * 
+	 *
 	 * @param string $page_url 访问的页面地址
 	 * @param string $link_url 页面中链接的地址
 	 * @return string
@@ -65,7 +65,7 @@ abstract class LmlSpiderBase extends LmlBase{
 		}
 		return $return_link;
 	}
-	
+
 	/**
 	 * 根据链接获取域名首页地址
 	 * @param string $url
@@ -78,7 +78,7 @@ abstract class LmlSpiderBase extends LmlBase{
 		}
 		return $url;
 	}
-	
+
 	/**
 	 * 获取页面 meta 中的字符编码
 	 * @param unknown_type $content
@@ -87,10 +87,10 @@ abstract class LmlSpiderBase extends LmlBase{
 	public static function getPageCharset( $content ){
 		// <meta http-equiv="Content-Type" content="text/html; charset=gb2312">
 		$matches = '';
-		preg_match("/<meta.+charset=([a-zA-Z0-9]{1,10}).*?>/i", $content, $matches);
+		preg_match("/<meta.+charset=([a-zA-Z0-9\-]{1,10}).*?>/i", $content, $matches);
 		return isset($matches[1])?$matches[1]:'';
 	}
-	
+
 	/**
 	 * 将内容在控制台输出
 	 * @param string $s
@@ -100,7 +100,7 @@ abstract class LmlSpiderBase extends LmlBase{
 		ob_flush();
 		flush();
 	}
-	
+
 	/**
 	 * 发出请求
 	 */
@@ -108,7 +108,7 @@ abstract class LmlSpiderBase extends LmlBase{
 		if( !$url ){
 			return ;
 		}
-		
+
 		$context = array(
 			'http' => array (
 				'timeout' => 10,
@@ -125,7 +125,7 @@ abstract class LmlSpiderBase extends LmlBase{
 		$htmlpage = @file_get_contents( $url, false, stream_context_create($context) );
 		self::pl("end: request url is ".$url);
 		self::pl("info: get page length is ".strlen($htmlpage));
-		
+
 		foreach ( $http_response_header as $k=>$v){
 			if( preg_match('/^Content-Encoding:\s*gzip/i', $v) ){
 				self::pl('start: gzdecode');
@@ -136,8 +136,8 @@ abstract class LmlSpiderBase extends LmlBase{
 		$charset = self::getPageCharset($htmlpage);
 		if( $charset != 'utf-8' ){
 			self::pl('start: convert '.$charset.' to utf-8');
-			
-			
+
+
 			/**
 			 * - to C
 			 */
@@ -147,11 +147,11 @@ abstract class LmlSpiderBase extends LmlBase{
 			$htmlpage = iconv($charset, 'utf-8//IGNORE', $htmlpage);
 			//ini_set('mbstring.substitute_character', "-");
 			//$htmlpage = mb_convert_encoding($htmlpage, 'UTF-8', $charset);
-			
-			
-			// err 
+
+
+			// err
 			// $htmlpage = iconv($charset, 'utf-8//TRANSLIT', $htmlpage);
-			
+
 			/**
 			 * err
 			 */
@@ -164,12 +164,12 @@ abstract class LmlSpiderBase extends LmlBase{
 
 			self::pl('end: convert '.$charset.' to utf-8');
 		}
-		
+
 		return $htmlpage;
 	}
-	
+
 	public $pageContent;
-	
+
 	public function run() {
 		while ( ($url = $this->getNextUrl()) != '' ){
 			$this->pageContent = self::getRemoteContent($url);
@@ -177,23 +177,23 @@ abstract class LmlSpiderBase extends LmlBase{
 			sleep(1);
 		}
 	}
-	
+
 	/**
 	 * entrance method
 	 */
 	abstract function start();
-	
+
 	/**
 	 * next url
 	 */
 	abstract function getNextUrl();
-	
+
 	/**
 	 * process data
 	 */
 	abstract function process();
-	
-	
+
+
 }
 
 
