@@ -75,15 +75,15 @@ abstract class LmlSiteSpider extends LmlSpiderBase{
 
         $content = str_replace('<p>&nbsp;</p>', '', $content);
         $content = str_replace('<p></p>', '', $content);
-        $content = preg_replace('/<p>[\s]+<\/p>/', $replacement, $content);
+        $content = preg_replace('/<p>[\s]+<\/p>/', '', $content);
 
         $content = preg_replace('/<p.*?>/', '<p>', $content);
 
         $content = preg_replace_callback('/<img[\s\S]*?>/', array($this, 'processImg'), $content);
 
-        lml()->fileDebug($url, APP_PATH.'data'.date(Ymd).'.txt');
-        lml()->fileDebug($title, APP_PATH.'data'.date(Ymd).'.txt');
-        lml()->fileDebug($content, APP_PATH.'data'.date(Ymd).'.txt');
+        lml()->fileDebug($url, APP_PATH.'data'.date('Ymd').'.txt');
+        lml()->fileDebug($title, APP_PATH.'data'.date('Ymd').'.txt');
+        lml()->fileDebug($content, APP_PATH.'data'.date('Ymd').'.txt');
 
         // save to mysql db
         $this->save($url, $title, $content);
