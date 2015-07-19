@@ -45,14 +45,15 @@ abstract class LmlSiteSpider extends LmlSpiderBase{
         while(count($this->links)){
             $x = array_pop($this->links);
             if(preg_match($this->targetLinkRegexp, $x, $m)){
-                self::pl('next url is '.$this->home.$m[1]);
+                $fullUrl = self::getPageLinkUrl($this->home, $m[1]);
+                self::pl('next url is '.$fullUrl);
 
                 // check is done before
-                if($this->checkWhetherCrawled($this->home.$m[1]) ){
+                if($this->checkWhetherCrawled($fullUrl) ){
                     continue;
                 }
 
-                return $this->home.$m[1];
+                return $fullUrl;
             }
         }
         return '';
@@ -78,6 +79,8 @@ abstract class LmlSiteSpider extends LmlSpiderBase{
         $content = preg_replace('/<p>[\s]+<\/p>/', '', $content);
 
         $content = preg_replace('/<p.*?>/', '<p>', $content);
+        
+        $content = $this->processContent($content);
 
         $content = preg_replace_callback('/<img[\s\S]*?>/', array($this, 'processImg'), $content);
 
@@ -136,5 +139,7 @@ abstract class LmlSiteSpider extends LmlSpiderBase{
         $x = $db->insert("insert into table_name(url, type, createtime, title, content) values(?,?,?,?,?)", $data);
     }
     */
+    
+   abstract function processContent($content);
 }
 
