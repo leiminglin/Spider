@@ -173,7 +173,7 @@ abstract class LmlSpiderBase extends LmlBase{
 	public function run() {
 		while ( ($url = $this->getNextUrl()) != '' ){
 			$this->pageContent = self::getRemoteContent($url);
-			$this->process();
+			$this->process($url);
 			sleep(1);
 		}
 	}
@@ -191,7 +191,7 @@ abstract class LmlSpiderBase extends LmlBase{
 	/**
 	 * process data
 	 */
-	abstract function process();
+	abstract function process($url);
 
 
 }
