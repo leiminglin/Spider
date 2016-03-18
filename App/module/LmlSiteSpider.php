@@ -2,11 +2,17 @@
 abstract class LmlSiteSpider extends LmlSpiderBase{
 
     public $links = array();
+    public $currentUrl;
     public $home = 'http://test.com';
     public $targetLinkRegexp = '/href="(.*?\.html)"/';
     public $titleRegexp = '/title.*?>(.*?)<\/div>/';
     public $contentRegexp = '/content.*?>([\s\S]*?)<\/div[\s\S]*?<div\sclass="content/';
     public $imageTagTitleSuffix = '-LMLPHP';
+    public $regexps = array(
+    );
+    public $regexpsMatches;
+
+    public $logPath = '/root/data/';
 
     // this for process img
     public static $title = '';
@@ -53,6 +59,7 @@ abstract class LmlSiteSpider extends LmlSpiderBase{
                     continue;
                 }
 
+                $this->currentUrl = $fullUrl;
                 return $fullUrl;
             }
         }
@@ -64,29 +71,44 @@ abstract class LmlSiteSpider extends LmlSpiderBase{
         preg_match($this->titleRegexp, $this->pageContent, $matches_title);
         preg_match($this->contentRegexp, $this->pageContent, $matches_content);
 
+        $matches = '';
+        foreach ($this->regexps as $k=>$v){
+            preg_match($v, $this->pageContent, $matches[$k]);
+            if(isset($matches[$k][0])){
+                $matches[$k] = $matches[$k][0];
+            }else{
+                $matches[$k] = '';
+            }
+        }
+        if($matches){
+            $this->regexpsMatches = $matches;
+        }
+
         self::pl(isset($matches_title[1])?$matches_title[1]:'no match title');
         self::pl(isset($matches_content[0])?'content length is '.strlen($matches_content[0]):'no match content');
 
         $title = isset($matches_title[1])?$matches_title[1]:'no match title';
         $content = isset($matches_content[1])?$matches_content[1]:'no match content';
 
+        if($title == 'no match title' && $content == 'no match content'){
+            return;
+        }
+
         self::$title = $title;
 
-        $content = preg_replace('/<!--.*?-->/', '', $content);
-
+        $content = preg_replace('/<!--.*?-->/', '', trim($content));
         $content = str_replace('<p>&nbsp;</p>', '', $content);
         $content = str_replace('<p></p>', '', $content);
-        $content = preg_replace('/<p>[\s]+<\/p>/', '', $content);
-
+        $content = preg_replace('/<p>[\s]*<\/p>/i', '', $content);
         $content = preg_replace('/<p.*?>/', '<p>', $content);
         
         $content = $this->processContent($content);
 
         $content = preg_replace_callback('/<img[\s\S]*?>/', array($this, 'processImg'), $content);
 
-        lml()->fileDebug($url, APP_PATH.'data'.date('Ymd').'.txt');
-        lml()->fileDebug($title, APP_PATH.'data'.date('Ymd').'.txt');
-        lml()->fileDebug($content, APP_PATH.'data'.date('Ymd').'.txt');
+        lml()->fileDebug($url, $this->logPath.date('Ymd').'.txt');
+        lml()->fileDebug($title, $this->logPath.date('Ymd').'.txt');
+        lml()->fileDebug($content, $this->logPath.date('Ymd').'.txt');
 
         // save to mysql db
         $this->save($url, $title, $content);
@@ -99,7 +121,7 @@ abstract class LmlSiteSpider extends LmlSpiderBase{
         if(!isset($matches[1])){
             throw new LmlException('image no src attribute!');
         }
-        $link = self::getPageLinkUrl($this->home, $matches[1]);
+        $link = self::getPageLinkUrl($this->currentUrl, $matches[1]);
         $x = getimagesize($link);
         $width = $x[0];
         $height = $x[1];
@@ -108,10 +130,11 @@ abstract class LmlSiteSpider extends LmlSpiderBase{
             $height = round(640 * $height / $width);
             $width = 640;
         }
+        $altTitle = htmlspecialchars(self::$title.$this->imageTagTitleSuffix);
 
         $re = '<img osrc="'.$link.'" osrc-bak="'.$link.'" alt="'.
-        self::$title.$this->imageTagTitleSuffix.'" title="'.
-        self::$title.$this->imageTagTitleSuffix.'" width="'.$width.'" height="'.$height.'">';
+        $altTitle.'" title="'.
+        $altTitle.'" width="'.$width.'" height="'.$height.'">';
         self::pl('return img is ' . $re);
         return $re;
     }

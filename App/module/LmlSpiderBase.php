@@ -87,7 +87,7 @@ abstract class LmlSpiderBase extends LmlBase{
 	public static function getPageCharset( $content ){
 		// <meta http-equiv="Content-Type" content="text/html; charset=gb2312">
 		$matches = '';
-		preg_match("/<meta.+charset=([a-zA-Z0-9\-]{1,10}).*?>/i", $content, $matches);
+		preg_match("/<meta.+charset=\"?([a-zA-Z0-9\-]{1,10}).*?>/i", $content, $matches);
 		return isset($matches[1])?$matches[1]:'';
 	}
 
@@ -120,21 +120,22 @@ abstract class LmlSpiderBase extends LmlBase{
 					// ."Connection: keep-alive\n"
 			)
 		);
-		$http_response_header = '';
 		self::pl("start: request url is ".$url);
 		$htmlpage = @file_get_contents( $url, false, stream_context_create($context) );
 		self::pl("end: request url is ".$url);
 		self::pl("info: get page length is ".strlen($htmlpage));
 
-		foreach ( $http_response_header as $k=>$v){
-			if( preg_match('/^Content-Encoding:\s*gzip/i', $v) ){
-				self::pl('start: gzdecode');
-				$htmlpage = gzdecode($htmlpage);
-				self::pl('end: gzdecode');
+		if(isset($http_response_header) && is_array($http_response_header)){
+			foreach ( $http_response_header as $k=>$v){
+				if( preg_match('/^Content-Encoding:\s*gzip/i', $v) ){
+					self::pl('start: gzdecode');
+					$htmlpage = gzdecode($htmlpage);
+					self::pl('end: gzdecode');
+				}
 			}
 		}
 		$charset = self::getPageCharset($htmlpage);
-		if( $charset != 'utf-8' ){
+		if( strtolower($charset) != 'utf-8' ){
 			self::pl('start: convert '.$charset.' to utf-8');
 
 
